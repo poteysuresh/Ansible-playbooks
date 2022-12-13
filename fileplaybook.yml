@@ -1,0 +1,19 @@
+---
+- hosts: all
+  become: true
+  remote_user: ansible
+  tasks:
+    - name: create a file in /tmp directory
+      file:
+        path: /tmp/mithun.txt
+        state: touch
+    - name: create a directory in /tmp directory
+      file:
+        path: /tmp/mithundirectory
+        state: directory
+    - name: create a soft link for mithun.txt file
+      file:
+        src: /tmp/mithun.txt
+        dest: /tmp/mithun1.txt
+        state: link
+

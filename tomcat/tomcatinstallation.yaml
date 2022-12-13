@@ -1,0 +1,74 @@
+---
+- hosts: 3.109.183.75
+  remote_user: ansible
+  become: true
+  tasks:
+    - name: installation of java
+      yum:
+        name: java-11-openjdk-devel
+        state: latest
+    - name: create a tomcat user
+      user:
+        name: tomcat
+        shell: /sbin/nologin
+    - name: Downloading tomcat software on /tmp
+      get_url:
+        url: https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.70/bin/apache-tomcat-9.0.70.zip
+        dest: /tmp/
+    - name: copying to /usr/local/
+      copy:
+        src: /tmp/apache-tomcat-9.0.70.zip
+        dest: /usr/local
+        remote_src: yes
+    - name: unarchieving
+      unarchive:
+        src: /usr/local/apache-tomcat-9.0.70.zip
+        dest: /usr/local
+        remote_src: yes
+    - name: change the ownership,permission and group recursively
+      file:
+        path: /usr/local/apache-tomcat-9.0.70
+        owner: tomcat
+        group: tomcat
+        recurse: yes
+        state: directory
+    - name: symbolic link creation
+      file:
+        src: /usr/local/apache-tomcat-9.0.70
+        dest: /usr/local/tomcat7
+        group: tomcat
+        owner: tomcat
+        state: link
+    - name: create tomcat.service file
+      file:
+        path: /etc/systemd/system/tomcat.service
+        state: touch
+    - name: edit file tomcat.service
+      blockinfile:
+        dest: /etc/systemd/system/tomcat.service
+        insertafter:
+        block: |
+          [Unit]
+          Description = Apache Tomcat 9
+          After = syslog.target network.target
+          [Service]
+          User = tomcat
+          Group = tomcat
+          Type = oneshot
+          PIDFile =/usr/local/apache-tomcat-9.0.70/tomcat.pid
+          RemainAfterExit = yes
+          ExecStart =/usr/local/apache-tomcat-9.0.70/bin/startup.sh
+          ExecStop =/usr/local/apache-tomcat-9.0.70/bin/shutdown.sh
+          ExecReStart =/usr/local/apache-tomcat-9.0.70/bin/shutdown.sh;/usr/local/apache-tomcat-9.0.70/bin/startup.sh
+          [Install]
+          WantedBy = multi-user.target
+    - name: changing the permissions of tomcat.service
+      file:
+        path: /etc/systemd/system/tomcat.service
+        mode: 0755
+    - name: starting the tomcat service
+      systemd:
+        name: tomcat.service
+        state: started
+        daemon_reload: yes
+        enabled: yes

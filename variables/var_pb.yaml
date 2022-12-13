@@ -1,0 +1,21 @@
+---
+- hosts: all
+  gather_facts: no
+  become: yes
+  remote_user: ansible
+  vars:
+   company: Surviksha solutions
+   location: Hyderabad
+  tasks:
+    - name: deleting already existing file
+      file:
+        path: /var/www/html/index.html
+        state: absent
+    - name: copying index.html
+      template:
+        src: index.html
+        dest: /var/www/html/index.html
+    - name: restarting httpd
+      service:
+        name: httpd
+        state: restarted

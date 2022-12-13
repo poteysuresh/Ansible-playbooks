@@ -1,0 +1,26 @@
+---
+- hosts: all
+  gather_facts: no
+  become: yes
+  remote_user: ansible
+  tasks:
+    - name: deleting already existing file
+      file:
+        path: /var/www/html/index.html
+        state: absent
+    - name: installing httpd package
+      yum:
+        name: httpd
+        state: latest
+    - name: enabling httpd
+      systemd:
+        name: httpd
+        enabled: yes
+    - name: copying index.html
+      copy:
+        src: index.html
+        dest: /var/www/html/index.html
+    - name: restarting httpd
+      service:
+        name: httpd
+        state: restarted

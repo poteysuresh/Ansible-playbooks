@@ -1,0 +1,18 @@
+---
+- hosts: all
+  become: true
+  remote_user: ansible
+  tasks:
+    - name: Providing full permissions to mithun.txt
+      file:
+        path: /tmp/mithun.txt
+        mode: 0777
+    - name: providing read permissions to all for mithun directory
+      file:
+        path: /tmp/mithundirectory
+        mode: 0444
+    - name: Applying Sticky Bit for mithun directory
+      file:
+        path: /tmp/mithundirectory
+        mode: 1444
+
