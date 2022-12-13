@@ -9,7 +9,7 @@
       user:
         name: tomcat
         shell: /sbin/nologin
-    - name: get_installer
+    - name: Tomcat-10 Installation
       get_url:
         url: https://dlcdn.apache.org/tomcat/tomcat-10/v10.0.27/bin/apache-tomcat-10.0.27.tar.gz
         dest: /tmp/
@@ -18,7 +18,7 @@
         src: /tmp/apache-tomcat-10.0.27.tar.gz
         dest: /usr/local/
         remote_src: yes
-    - name: install
+    - name: Unpacking the archive
       unarchive:
         src: /usr/local/apache-tomcat-10.0.27.tar.gz
         dest: /usr/local
@@ -30,7 +30,7 @@
         group: tomcat
         recurse: yes
         state: directory
-    - name: make tomcat symbolic
+    - name: make tomcat symbolic link
       file:
         src: /usr/local/apache-tomcat-10.0.27
         dest: /usr/local/tomcat7
