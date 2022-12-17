@@ -1,0 +1,19 @@
+---
+- hosts: all
+  remote_user: ansible
+  become: true
+  tasks:
+    - name: creation of user with password
+      user:
+        name: mayank
+        state: present
+        password: "{{'devops@123' | password_hash('sha512','A512')}}"
+    - name: providing sudo access to the mayank
+      file:
+        path: /etc/sudoers.d/mayank
+        state: touch
+    - name: adding line in file mayank
+      lineinfile:
+        path: /etc/sudoers.d/mayank
+        line: 'mayank ALL=(ALL) NOPASSWD: ALL'
+        
