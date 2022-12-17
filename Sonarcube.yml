@@ -1,0 +1,80 @@
+- hosts: 65.2.78.28
+  become: true
+  gather_facts: no
+  tasks:
+  - name: install java
+    yum:
+      name: ['java-11-openjdk-devel', 'unzip']
+      state: present
+  - name: Download sonar software
+    get_url:
+      url: https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-9.6.1.59531.zip
+      dest: /opt/
+  - name: unzip sonar Software
+    unarchive:
+      src: /opt/sonarqube-9.6.1.59531.zip
+      dest: /usr/local
+      remote_src: yes
+  - name: Rename the sonar directory
+    shell: mv /usr/local/sonarqube-9.6.1.59531 /usr/local/sonarqube/
+  - name: Create the sonar user
+    user:
+      name: sonar
+      create_home: true
+      shell: /bin/bash
+      comment: "Sonar Management Account"
+      expires: -1
+      password: "{{ 'sonar' | password_hash('sha512','A512') }}"
+  - name: Change owner and group and permissions of sonar dir in opt
+    file:
+      path: /usr/local/sonarqube/
+      owner: sonar
+      group: sonar
+      mode: 0775
+      recurse: yes
+      state: directory
+  - name: Create soft link for sonarqube
+    file:
+      src: /usr/local/sonarqube/bin/linux-x86-64/sonar.sh
+      dest: /usr/local/sonar
+      group: sonar
+      owner: sonar
+      state: link
+  - name: make sonar.service
+    file:
+        path: /etc/systemd/system/sonar.service
+        state:  touch
+  - name: edit sonar.service
+    blockinfile:
+        dest: /etc/systemd/system/sonar.service
+        insertafter:
+        block: |
+          [Unit]
+          Description = sonar9
+          After = syslog.target network.target
+          [Service]
+          User = sonar
+          Group = sonar
+          Type = oneshot
+          SONAR_HOME=/usr/local/sonarqube
+          PLATFORM=linux-x86-64
+
+          WRAPPER_CMD="${SONAR_HOME}/bin/${PLATFORM}/wrapper"
+          WRAPPER_CONF="${SONAR_HOME}/conf/wrapper.conf"
+          PIDDIR="/usr/local/sonarqube/"
+          RemainAfterExit = yes
+          ExecStart =/usr/local/sonarqube/bin/linux-x86-64/sonar.sh start
+          ExecStop =/usr/local/sonarqube/bin/linux-x86-64/sonar.sh stop
+          ExecReStart =/usr/local/sonarqube/bin/linux-x86-64/sonar.sh stop;/usr/local/sonarqube/bin/linux-x86-64/sonar.sh start
+          [Install]
+          WantedBy = multi-user.target
+  - name: permissiion for  sonar.service
+    file:
+        path: /usr/local/sonar
+        mode:  0755
+  - name: Start sonar service
+    systemd:
+      name: sonar.service
+      state: started
+      daemon_reload: yes
+      enabled: yes
